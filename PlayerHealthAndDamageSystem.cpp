@@ -28,7 +28,7 @@ class Player
         return 0;
     } 
 
-    int TakeDamage(int damage)
+    void TakeDamage(int damage)
     {
         if(health > 0)
         {
@@ -39,7 +39,7 @@ class Player
             cout<< "Menco Lost The Last Match Of his Career"<<endl;
         }
     }
-    int heal()
+    void heal()
     {
 
     }
