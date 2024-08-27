@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 using namespace std;
 
 
@@ -8,7 +9,10 @@ class Player
     int health;
     int healingPower;
     int attackingPower;
-
+    int minDamge = 8;
+    int maxDamage = 16;
+    int minHeal = 10;
+    int maxHeal = 20;
     public:
     Player()
     {
@@ -25,7 +29,9 @@ class Player
 
     int GiveDamage()
     {
-        return 0;
+        srand(time(0));
+        int randomDamage = minDamge + (rand() % (maxDamage - minDamge + 1));
+        return randomDamage;
     } 
 
     void TakeDamage(int damage)
@@ -41,7 +47,9 @@ class Player
     }
     void heal()
     {
-
+        srand(time(0));
+        int randomHeal = minHeal + (rand() % (maxHeal - minHeal + 1));
+        health += randomHeal; 
     }
 
 };
