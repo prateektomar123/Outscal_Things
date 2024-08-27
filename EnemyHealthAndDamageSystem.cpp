@@ -3,7 +3,7 @@
 using namespace std;
 
 
-class Player
+class Enemy
 {
     private:
     int health;
@@ -14,13 +14,13 @@ class Player
     int minHeal = 10;
     int maxHeal = 20;
     public:
-    Player()
+    Enemy()
     {
-        cout<<"----Menco - One Last Fight!----"<<endl;
-        cout<<"After countless fights and titles. Menco is now going to say bye to UFC and MMA forever" <<endl;
-        cout<<"But But... as we say every legend deserves a legendary goodbye so here we have One last Fight "<<endl;
+        cout<<"----Here is Draco----"<<endl;
+        cout<<"After wining two champion trophy consecutively he comes for Meco" <<endl;
+        cout<<"so here we have a great vilain for the menco`s mma love story"<<endl;
         cout<< "----Menvo vs Draco---"<<endl;
-        cout<<"-------------------------------"<<endl;
+        cout<<"-------------------------------------------"<<endl;
     }
 
     int gethealth()
@@ -54,9 +54,7 @@ class Player
     }
  
 };
-
-
 int main()
 {
- Player playerobj;
+ Enemy enemyObj;
   }
