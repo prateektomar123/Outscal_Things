@@ -94,10 +94,24 @@ public:
 
     virtual ~Enemy() = default;
 
+    virtual void performAction(Player& target) {
+        if (rand() % 100 < 80) { // 80% chance to attack
+            attack(target);
+        } else { // 20% chance to heal
+            heal();
+        }
+    }
+
     virtual void attack(Player& target) {
         int damage = meleeDamage;
         target.receiveDamage(damage);
         cout << "Enemy attacks! Dealt " << damage << " damage.\n";
+    }
+
+    void heal() {
+        int healAmount = 5 + rand() % (level * 2);
+        health += healAmount;
+        cout << "Enemy heals for " << healAmount << " HP. Enemy HP: " << health << "\n";
     }
 
     void receiveDamage(int damage) {
@@ -122,8 +136,8 @@ public:
         defense += 5;
     }
 
-    void attack(Player& target) override {
-        Enemy::attack(target);
+    void performAction(Player& target) override {
+        Enemy::performAction(target);
         
         // 30% chance to use a special move
         if (rand() % 100 < 30) {
@@ -178,78 +192,86 @@ void Player::attack(Enemy& target) {
     }
 }
 
-// Battle function
-void battle(Player& player, unique_ptr<Enemy>& enemy) {
-    bool playerTurn = true;
-    bool rangedAttackActive = false;
-
-    while (player.isAlive() && enemy->isAlive()) {
-        if (playerTurn) {
-            cout << "\nYour HP: " << player.getHealth() << "/" << player.getMaxHealth()
-                 << " | Enemy HP: " << enemy->getHealth() << "\n";
-            cout << "Choose action: (1) Attack (2) Heal: ";
-            int choice;
-            cin >> choice;
-
-            if (choice == 1) {
-                player.attack(*enemy);
-            } else if (choice == 2) {
-                player.heal(player.getMaxHealth() / 10);
-            }
-
-            playerTurn = false;
-        } else {
-            if (!rangedAttackActive) {
-                enemy->attack(player);
-            } else {
-                cout << "Ranged Attack special ability protected you from enemy attack!\n";
-                rangedAttackActive = false;
-            }
-            playerTurn = true;
-        }
-    }
-}
-
-// Level data structure
-struct LevelData {
-    int number;
+// Level class
+class Level {
+private:
+    
     int numEnemies;
     string rewardItem;
     string specialAbility;
     function<unique_ptr<Enemy>(int)> enemyCreator;
-};
 
-// Unified level progression function
-bool playLevel(Player& player, const LevelData& level) {
-    cout << "\n--- Level " << level.number << " ---\n";
-    for (int i = 0; i < level.numEnemies; ++i) {
-        cout << "Enemy " << i + 1 << " approaches!\n";
-        auto enemy = level.enemyCreator(player.getLevel());
-        battle(player, enemy);
+public:
+    int number;
+    Level(int num, int enemies, string reward, string ability, function<unique_ptr<Enemy>(int)> creator)
+        : number(num), numEnemies(enemies), rewardItem(reward), specialAbility(ability), enemyCreator(creator) {}
+
+    bool play(Player& player) {
+        cout << "\n--- Level " << number << " ---\n";
+        for (int i = 0; i < numEnemies; ++i) {
+            cout << "Enemy " << i + 1 << " approaches!\n";
+            auto enemy = enemyCreator(player.getLevel());
+            if (!battle(player, enemy)) {
+                return false;
+            }
+        }
+
+        if (!rewardItem.empty()) player.receiveItem(rewardItem);
+        if (!specialAbility.empty()) cout << "New Special Ability Unlocked: " << specialAbility << "\n";
+        player.levelUp();
+        return true;
+    }
+
+private:
+    bool battle(Player& player, unique_ptr<Enemy>& enemy) {
+        bool playerTurn = true;
+        bool rangedAttackActive = false;
+
+        while (player.isAlive() && enemy->isAlive()) {
+            if (playerTurn) {
+                cout << "\nYour HP: " << player.getHealth() << "/" << player.getMaxHealth()
+                     << " | Enemy HP: " << enemy->getHealth() << "\n";
+                cout << "Choose action: (1) Attack (2) Heal: ";
+                int choice;
+                cin >> choice;
+
+                if (choice == 1) {
+                    player.attack(*enemy);
+                } else if (choice == 2) {
+                    player.heal(player.getMaxHealth() / 10);
+                }
+
+                playerTurn = false;
+            } else {
+                if (!rangedAttackActive) {
+                    enemy->performAction(player);
+                } else {
+                    cout << "Ranged Attack special ability protected you from enemy action!\n";
+                    rangedAttackActive = false;
+                }
+                playerTurn = true;
+            }
+        }
 
         if (!player.isAlive()) {
             cout << "You died! Game over.\n";
             return false;
         }
+        return true;
     }
+};
 
-    if (!level.rewardItem.empty()) player.receiveItem(level.rewardItem);
-    if (!level.specialAbility.empty()) cout << "New Special Ability Unlocked: " << level.specialAbility << "\n";
-    player.levelUp();
-    return true;
-}
 
-// Main game loop
 int main() {
-    srand(static_cast<unsigned int>(time(0)));  // Seed for random number generator
+    srand(static_cast<unsigned int>(time(0)));  
 
     Player player;
     cout << "Welcome to Hero's Quest: Battle Against Murlocs!\n";
     cout << "Your village has been captured by the monstrous Murlocs. ";
     cout << "Defeat them and save your people!\n\n";
 
-    // Define levels
-    LevelData levels[] = {
+    
+    Level levels[] = {
         {1, 1, "Map", "None", [](int level) { return make_unique<Enemy>(level); }},
         {2, 2, "Sword", "Critical Hit", [](int level) { return make_unique<Enemy>(level); }},
         {3, 3, "Shield", "Blocker", [](int level) { return make_unique<Enemy>(level); }},
@@ -258,13 +280,13 @@ int main() {
         {6, 1, "", "", [](int level) { return make_unique<Boss>(level); }}  // Boss level
     };
 
-    // Level progression
-    for (const auto& level : levels) {
+    
+    for (auto& level : levels) {
         if (level.number == 6) {
             cout << "\n--- Level 6: Boss Fight ---\n";
             cout << "You've reached Murloc's lair. Prepare for the final battle!\n";
         }
-        if (!playLevel(player, level)) return 0;
+        if (!level.play(player)) return 0;
     }
 
     if (player.isAlive()) {
